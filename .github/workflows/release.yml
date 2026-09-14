@@ -32,13 +32,13 @@ jobs:
         working-directory: backend
         run: |
           cargo build --release
-          mkdir -p ../dist-artifacts
-          cp target/release/admin-starter-backend ../dist-artifacts/admin-starter-backend-linux-x64
+          mkdir -p $GITHUB_WORKSPACE/dist-artifacts
+          cp target/release/admin-starter-backend $GITHUB_WORKSPACE/dist-artifacts/admin-starter-backend-linux-x64
 
       - uses: actions/upload-artifact@v4
         with:
           name: admin-starter-backend-linux-x64
-          path: dist-artifacts/admin-starter-backend-linux-x64
+          path: ${{ github.workspace }}/dist-artifacts/admin-starter-backend-linux-x64
           if-no-files-found: error
 
   backend-windows:
@@ -57,13 +57,13 @@ jobs:
         working-directory: backend
         run: |
           cargo build --release
-          mkdir -Force ..\dist-artifacts
-          Copy-Item target\release\admin-starter-backend.exe ..\dist-artifacts\admin-starter-backend-windows-x64.exe
+          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\dist-artifacts"
+          Copy-Item target\release\admin-starter-backend.exe "$env:GITHUB_WORKSPACE\dist-artifacts\admin-starter-backend-windows-x64.exe"
 
       - uses: actions/upload-artifact@v4
         with:
           name: admin-starter-backend-windows-x64
-          path: dist-artifacts/admin-starter-backend-windows-x64.exe
+          path: ${{ github.workspace }}\dist-artifacts\admin-starter-backend-windows-x64.exe
           if-no-files-found: error
 
   backend-macos:
@@ -81,13 +81,13 @@ jobs:
         working-directory: backend
         run: |
           cargo build --release
-          mkdir -p ../dist-artifacts
-          cp target/release/admin-starter-backend ../dist-artifacts/admin-starter-backend-macos-aarch64
+          mkdir -p $GITHUB_WORKSPACE/dist-artifacts
+          cp target/release/admin-starter-backend $GITHUB_WORKSPACE/dist-artifacts/admin-starter-backend-macos-aarch64
 
       - uses: actions/upload-artifact@v4
         with:
           name: admin-starter-backend-macos-aarch64
-          path: dist-artifacts/admin-starter-backend-macos-aarch64
+          path: ${{ github.workspace }}/dist-artifacts/admin-starter-backend-macos-aarch64
           if-no-files-found: error
 
   # ============ 前端:Vue 静态构建 ============
@@ -115,13 +115,15 @@ jobs:
       - name: Zip dist
         working-directory: frontend
         run: |
-          mkdir -p ../../dist-artifacts
-          (cd dist && zip -r ../../dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip .)
+          mkdir -p $GITHUB_WORKSPACE/dist-artifacts
+          cd dist
+          zip -r $GITHUB_WORKSPACE/dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip .
+          ls -la $GITHUB_WORKSPACE/dist-artifacts/
 
       - uses: actions/upload-artifact@v4
         with:
           name: admin-starter-frontend
-          path: dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip
+          path: ${{ github.workspace }}/dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip
           if-no-files-found: error
 
   # ============ 汇总:创建 Release 并附 assets ============
