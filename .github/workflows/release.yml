@@ -11,48 +11,83 @@ permissions:
   contents: write
 
 jobs:
-  # ============ 后端:Rust 多平台编译 ============
-  backend:
-    name: backend (${{ matrix.target }})
+  # ============ 后端:Rust 多平台原生编译 ============
+  # 每个 platform 用对应 runner,避免交叉编译问题
+  backend-linux:
+    name: backend (linux x64)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            artifact: admin-starter-backend-linux-x64
-            binary: admin-starter-backend
-          - target: x86_64-apple-darwin
-            artifact: admin-starter-backend-macos-x64
-            binary: admin-starter-backend
-          - target: x86_64-pc-windows-m64
-            artifact: admin-starter-backend-windows-x64.exe
-            binary: admin-starter-backend.exe
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
         with:
-          targets: ${{ matrix.target }}
+          workspaces: backend -> target
 
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+
+      - name: Build release binary
+        working-directory: backend
+        run: |
+          cargo build --release
+          mkdir -p ../dist-artifacts
+          cp target/release/admin-starter-backend ../dist-artifacts/admin-starter-backend-linux-x64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: admin-starter-backend-linux-x64
+          path: dist-artifacts/admin-starter-backend-linux-x64
+          if-no-files-found: error
+
+  backend-windows:
+    name: backend (windows x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend -> target
 
       - name: Build release binary
         working-directory: backend
         run: |
-          cargo build --release --target ${{ matrix.target }}
-          mkdir -p ../dist-artifacts
-          cp target/${{ matrix.target }}/release/${{ matrix.binary }} ../dist-artifacts/${{ matrix.artifact }}
+          cargo build --release
+          mkdir -Force ..\dist-artifacts
+          Copy-Item target\release\admin-starter-backend.exe ..\dist-artifacts\admin-starter-backend-windows-x64.exe
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: dist-artifacts/${{ matrix.artifact }}
+          name: admin-starter-backend-windows-x64
+          path: dist-artifacts/admin-starter-backend-windows-x64.exe
+          if-no-files-found: error
+
+  backend-macos:
+    name: backend (macos aarch64)
+    # macos-latest 是 M1,直接出 aarch64 binary(Intel Mac 已经 EOL)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+
+      - name: Build release binary
+        working-directory: backend
+        run: |
+          cargo build --release
+          mkdir -p ../dist-artifacts
+          cp target/release/admin-starter-backend ../dist-artifacts/admin-starter-backend-macos-aarch64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: admin-starter-backend-macos-aarch64
+          path: dist-artifacts/admin-starter-backend-macos-aarch64
           if-no-files-found: error
 
   # ============ 前端:Vue 静态构建 ============
@@ -80,11 +115,10 @@ jobs:
       - name: Zip dist
         working-directory: frontend
         run: |
-          mkdir -p ../../dist-artifacts
-          (cd dist && zip -r ../../dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip .)
+          mkdir -p ../dist-artifacts
+          (cd dist && zip -r ../dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip .)
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: admin-starter-frontend
           path: dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip
@@ -93,7 +127,7 @@ jobs:
   # ============ 汇总:创建 Release 并附 assets ============
   publish:
     name: publish release
-    needs: [backend, frontend]
+    needs: [backend-linux, backend-windows, backend-macos, frontend]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts

@@ -35,7 +35,7 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
+          <template #default="{ row }: { row: PermissionNode }">
             <el-button v-permission="'system:permission:create'" link type="primary" @click="openCreate(row)">新增子项</el-button>
             <el-button v-permission="'system:permission:update'" link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-popconfirm
