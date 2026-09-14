@@ -1,0 +1,61 @@
+[package]
+name = "admin-starter-backend"
+version = "0.1.0"
+edition = "2021"
+authors = ["admin-starter"]
+description = "A learning-friendly Rust + Axum + SQLite admin backend"
+
+[dependencies]
+# Web 框架:axum 是 tokio 团队主推的,模块化做得好
+axum = { version = "0.7", features = ["macros", "tokio", "http1"] }
+
+# 异步运行时
+tokio = { version = "1", features = ["full"] }
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# 数据库:sqlx 是 Rust 生态里最主流的 async SQL 库,支持 SQLite
+# 关闭 query macros(需要离线 .sqlx 目录才能编译),这里只用 runtime query
+sqlx = { version = "0.7", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "sqlite",
+    "chrono",
+    "uuid",
+    "macros",
+    "migrate",
+] }
+
+# 通用工具
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# 错误处理
+thiserror = "1"
+anyhow = "1"
+
+# JWT + 密码哈希
+jsonwebtoken = "9"
+bcrypt = "0.15"
+
+# 配置 & 环境变量
+dotenvy = "0.15"
+
+# 日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 中间件
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "set-header"] }
+
+# 参数校验
+validator = { version = "0.18", features = ["derive"] }
+
+# 异步抽象(给 trait 用)
+async-trait = "0.1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
