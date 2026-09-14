@@ -22,7 +22,7 @@
           </template>
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
-          <template #default="{ row }: { row: RoleDto }">
+          <template #default="{ row }">
             <el-button v-permission="'system:role:assign'" link type="primary" @click="openPerm(row)">分配权限</el-button>
             <el-button v-permission="'system:role:update'" link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-popconfirm
