@@ -115,8 +115,8 @@ jobs:
       - name: Zip dist
         working-directory: frontend
         run: |
-          mkdir -p ../dist-artifacts
-          (cd dist && zip -r ../dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip .)
+          mkdir -p ../../dist-artifacts
+          (cd dist && zip -r ../../dist-artifacts/admin-starter-frontend-${{ github.ref_name }}.zip .)
 
       - uses: actions/upload-artifact@v4
         with:
